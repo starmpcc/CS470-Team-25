@@ -1,0 +1,36 @@
+.h_style{
+    height: 100px;
+}
+
+.b_block{
+    height: 400px;
+}
+
+.c_block{
+    height: 200px;
+}
+.back{
+    visibility: hidden;
+}
+.name{
+    padding: 30px;
+    font-size: 25px;
+}
+
+.glyphicon {
+    font-size: 30px;
+}
+
+.glyphicon-cloud-upload{
+    padding : 100px;
+    font-size:  150px;
+    color: #F3F7F9  ;
+}
+
+.box{
+    height: 360px;
+    background-color:#CEDFED   ;
+    text-align:center;
+}
+
+  
