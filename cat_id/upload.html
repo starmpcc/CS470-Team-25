@@ -32,10 +32,11 @@
     <div class="container b_block">
         <div class="row">
             <div class="col-md-1"></div>
-            <div class="col-md-10">
+            <div class="col-md-10 magic">
                 <form action="/file-upload"
                 class="dropzone box"
-                id="my-awesome-dropzone">
+                id="my-awesome-dropzone"
+                onchange="readURL(this);">
                     <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>
                 </form>
                 <!--span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span-->
