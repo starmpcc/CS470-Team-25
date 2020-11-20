@@ -29,7 +29,7 @@ def rec_freeze(model):
 
 
 #Read Pre-processed data
-face_data = torch.zeros(100, 100, 10).to(device)
+face_data = torch.zeros(100, 10000, 10).to(device)
 
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -38,7 +38,8 @@ temp_transform = transforms.Compose([
                                     transforms.Resize(224),
                                     transforms.CenterCrop(224),
                                     transforms.ToTensor(),
-                                    normalize])
+                                    normalize,
+                                    ])
 
 class CatFaceDataset(torch.utils.data.Dataset):
     #Dict {image:Tensor(B*224*224), label:int, index:int}
@@ -46,10 +47,10 @@ class CatFaceDataset(torch.utils.data.Dataset):
     def __init__(self, root, transform):
         self.root = root
         self.imgs = []
-        self.cats = list(sorted(os.listdir(os.path.join(root, 'data_collect', "cat"))))
+        self.cats = list(sorted(os.listdir(os.path.join(root, "data_collect","cat"))))
         for cat in self.cats:
-            imagelist = list(sorted(os.listdir(os.path.join(root,'data_collect', "cat", cat))))
-            self.imgs += [os.path.join(root,'data_collect', "cat", cat, i) for i in imagelist]
+            imagelist = list(sorted(os.listdir(os.path.join(root,"data_collect","cat", cat))))
+            self.imgs += [os.path.join(root,"data_collect","cat", cat, i) for i in imagelist]
         self.transform = transform
 
     def __getitem__(self, idx):
