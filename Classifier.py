@@ -9,7 +9,7 @@ from torchvision.models import resnet34
 from PIL import Image
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-
+import csv
 
 root = os.getcwd()
 device = torch.device("cuda")
@@ -96,13 +96,20 @@ class ACNN(nn.Module):
         #Re-Define final fc layer to adapt our model
         self.fc = nn.Linear(512, num_classes)
 
+        self.fmn1_1 = nn.Linear(18, 60)
+        self.fmn1_2 = nn.Linear(60, 200)
+        self.fmn1_3 = nn.Linear(200,32768)
+
+        self.fmn2_1 = nn.Linear(18, 60)
+        self.fmn2_2 = nn.Linear(60, 200)
+        self.fmn2_3 = nn.Linear(200, 16384)
+
         rec_freeze(self.conv1)
         rec_freeze(self.layer1)
         rec_freeze(self.layer2)
         #define new layers for Adaptive Convolution
         self.param_ln1 = nn.Linear(1, 1)
 
-    #TODO: freeze some layers
     def forward(self, x, cat_face_data):
         #B*3*224*224
         x = self.conv1(x)
@@ -113,8 +120,22 @@ class ACNN(nn.Module):
         x = self.layer1(x)
         #B*64*32*32
         x = self.layer2(x)
+
+        fmn = self.fmn1_1(cat_face_data)
+        fmn = self.fmn1_2(fmn)
+        fmn = self.fmn1_3(fmn)
+        fmn = fmn.view(128, 16, 16)
+        x = x * fmn
+        
         #B*128*16*16
         x = self.layer3(x)
+        
+        fmn = self.fmn2_1(cat_face_data)
+        fmn = self.fmn2_2(fmn)
+        fmn = self.fmn2_3(fmn)
+        fmn = fmn.view(256, 8, 8)
+        x = x*fmn
+
         #B*256*8*8
         x = self.layer4(x)
         #B*512*4*4
