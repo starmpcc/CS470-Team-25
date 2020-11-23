@@ -2,16 +2,20 @@
     height: 100px;
 }
 
+.inp_block{
+    height: 400px;
+}
+
 .b_block{
+    display: none;
     height: 400px;
 }
 
 .c_block{
+    display: none;
     height: 200px;
 }
-.back{
-    visibility: hidden;
-}
+
 .name{
     padding: 30px;
     font-size: 25px;
@@ -28,9 +32,19 @@
 }
 
 .box{
-    height: 360px;
-    background-color:#CEDFED   ;
-    text-align:center;
+
+    width : 100%;
+    height: 350px ;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #F3F7F9  ;
+}
+
+#blah{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+
 }
 
   
