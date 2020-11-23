@@ -20,6 +20,21 @@ learning_rate = 0.01
 num_epoches = 50
 num_classes = 91
 
+'''
+data augmentation
+aug_f(original_img)
+#affine transformation
+aug_f1 = transforms..RandomAffine(30)
+#perspective projection
+aug_f2 = transforms.RandomPerspective()
+#random rotation
+aug_f3 = transforms.RandomRotation(90, expand=False)
+#different brightness, contrast
+aug_f4 = transforms.ColorJitter(brightness=(0.2, 2), 
+                               contrast=(0.3, 2), 
+                               saturation=(0.2, 2), 
+                               hue=(-0.3, 0.3))
+'''
 
 def rec_freeze(model):
     for child in model.children():
