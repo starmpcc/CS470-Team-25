@@ -8,8 +8,6 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet34
 from PIL import Image
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import csv
 
 root = os.getcwd()
 device = torch.device("cuda")
@@ -19,32 +17,14 @@ val_set_ratio = 0.25
 learning_rate = 0.01
 num_epoches = 50
 num_classes = 91
-
-'''
-data augmentation
-aug_f(original_img)
-#affine transformation
-aug_f1 = transforms..RandomAffine(30)
-#perspective projection
-aug_f2 = transforms.RandomPerspective()
-#random rotation
-aug_f3 = transforms.RandomRotation(90, expand=False)
-#different brightness, contrast
-aug_f4 = transforms.ColorJitter(brightness=(0.2, 2), 
-                               contrast=(0.3, 2), 
-                               saturation=(0.2, 2), 
-                               hue=(-0.3, 0.3))
-'''
-
+batch_size = 200
+aug_mul = 1
 def rec_freeze(model):
     for child in model.children():
         for param in child.parameters():
             param.requires_grad = False
         rec_freeze(child)
 
-
-#Read Pre-processed data
-face_data = torch.zeros(100, 10000, 10).to(device)
 
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -53,8 +33,22 @@ temp_transform = transforms.Compose([
                                     transforms.Resize(224),
                                     transforms.CenterCrop(224),
                                     transforms.ToTensor(),
-                                    normalize,
+                                    normalize
                                     ])
+
+aug_transform = transforms.Compose([
+                                    transforms.RandomAffine(30),
+                                    transforms.RandomPerspective(),
+                                    transforms.RandomRotation(90, expand=False),
+                                    transforms.ColorJitter(brightness=(0.2, 2), 
+                                            contrast=(0.3, 2), 
+                                            saturation=(0.2, 2), 
+                                            hue=(-0.3, 0.3)),
+                                    transforms.Resize(224),
+                                    transforms.CenterCrop(224),
+                                    transforms.ToTensor(),
+                                    normalize
+])
 
 class CatFaceDataset(torch.utils.data.Dataset):
     #Dict {image:Tensor(B*224*224), label:int, index:int}
@@ -85,7 +79,6 @@ class CatFaceDataset(torch.utils.data.Dataset):
         return len(self.imgs)
 
 
-
 class ACNN(nn.Module):
     def __init__(self):
         super(ACNN, self).__init__()
@@ -111,21 +104,11 @@ class ACNN(nn.Module):
         #Re-Define final fc layer to adapt our model
         self.fc = nn.Linear(512, num_classes)
 
-        self.fmn1_1 = nn.Linear(18, 60)
-        self.fmn1_2 = nn.Linear(60, 200)
-        self.fmn1_3 = nn.Linear(200,32768)
-
-        self.fmn2_1 = nn.Linear(18, 60)
-        self.fmn2_2 = nn.Linear(60, 200)
-        self.fmn2_3 = nn.Linear(200, 16384)
-
         rec_freeze(self.conv1)
         rec_freeze(self.layer1)
         rec_freeze(self.layer2)
-        #define new layers for Adaptive Convolution
-        self.param_ln1 = nn.Linear(1, 1)
 
-    def forward(self, x, cat_face_data):
+    def forward(self, x):
         #B*3*224*224
         x = self.conv1(x)
         x = self.bn1(x)
@@ -135,22 +118,8 @@ class ACNN(nn.Module):
         x = self.layer1(x)
         #B*64*32*32
         x = self.layer2(x)
-
-        fmn = self.fmn1_1(cat_face_data)
-        fmn = self.fmn1_2(fmn)
-        fmn = self.fmn1_3(fmn)
-        fmn = fmn.view(128, 16, 16)
-        x = x * fmn
-        
         #B*128*16*16
         x = self.layer3(x)
-        
-        fmn = self.fmn2_1(cat_face_data)
-        fmn = self.fmn2_2(fmn)
-        fmn = self.fmn2_3(fmn)
-        fmn = fmn.view(256, 8, 8)
-        x = x*fmn
-
         #B*256*8*8
         x = self.layer4(x)
         #B*512*4*4
@@ -160,6 +129,12 @@ class ACNN(nn.Module):
         x = self.fc(x)
 
         return x
+
+
+
+
+
+
 
 def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
     train_losses = []
@@ -174,9 +149,7 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
         for target in train_dataloader:
             x = target["image"].to(device)
             label = target["label"].to(device)
-            cat_face_data = face_data[label, target["index"], :]
-
-            pred = model(x, cat_face_data)
+            pred = model(x)
             optimizer.zero_grad()
             train_loss = fitness(pred, label)
             train_loss.backward()
@@ -197,9 +170,8 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
             with torch.no_grad():
                 x = target["image"].to(device)
                 label = target["label"].to(device)
-                cat_face_data = face_data[label, target["index"], :]
 
-                pred = model(x, cat_face_data)
+                pred = model(x)
                 val_loss = fitness(pred, label)
                 _, correct = torch.max(pred, 1)
                 correct_cnt += (correct == label).sum().item()
@@ -215,13 +187,15 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
 
 
 if __name__=="__main__":
-    dataset = CatFaceDataset(root, temp_transform)
+    dataset_train = CatFaceDataset(root, temp_transform)
+    dataset_val = CatFaceDataset(root, aug_transform)
     #Use ConcatDataset to use refined data
-    train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size = val_set_ratio)
-    train_dataset = torch.utils.data.Subset(dataset, train_idx)
-    val_dataset = torch.utils.data.Subset(dataset, val_idx)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, 10, True, num_workers = 8)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, 10, True, num_workers = 8)
+    train_idx, val_idx = train_test_split(list(range(len(dataset_train))), test_size = val_set_ratio)
+    train_dataset = torch.utils.data.Subset(dataset_train, train_idx)
+    val_dataset = torch.utils.data.Subset(dataset_val, val_idx)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size, True, num_workers = 8)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size, True, num_workers = 8)
+
 
     # Define Model
     model = ACNN().to(device)
