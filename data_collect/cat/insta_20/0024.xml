@@ -1,0 +1,26 @@
+<annotation>
+	<folder>insta_20</folder>
+	<filename>0024.jpg</filename>
+	<path>C:\Users\grace\Documents\GitHub\CS470-Team-23\data_collect\cat\insta_20\0024.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>640</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>cat</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>192</xmin>
+			<ymin>128</ymin>
+			<xmax>535</xmax>
+			<ymax>378</ymax>
+		</bndbox>
+	</object>
+</annotation>
