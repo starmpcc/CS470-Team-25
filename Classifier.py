@@ -8,19 +8,20 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet34
 from PIL import Image
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-
 
 root = os.getcwd()
 device = torch.device("cuda")
 
+
 #define hyperparameters
 val_set_ratio = 0.25
-learning_rate = 0.01
+learning_rate = 0.1
 num_epoches = 50
 num_classes = 91
+batch_size = 200
+aug_mul = 1
 
-
+#Utility Functions
 def rec_freeze(model):
     for child in model.children():
         for param in child.parameters():
@@ -28,18 +29,35 @@ def rec_freeze(model):
         rec_freeze(child)
 
 
-#Read Pre-processed data
-face_data = torch.zeros(100, 10000, 10).to(device)
+# Transforms and Transform-Support Functions for data
+class SquarePad:
+	def __call__(self, image):
+		w, h = image.size
+		max_wh = np.max([w, h])
+		hp = int((max_wh - w) / 2)
+		vp = int((max_wh - h) / 2)
+		padding = (hp, vp, hp, vp)
+		return transforms.functional.pad(image, padding, 0, 'constant')
 
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-#temporary loader for raw image
-temp_transform = transforms.Compose([
-                                    transforms.Resize(224),
-                                    transforms.CenterCrop(224),
+
+val_transform = transforms.Compose([
+                                    SquarePad(),
+                                    transforms.Resize([224, 224]),
                                     transforms.ToTensor(),
-                                    normalize,
+                                    normalize
                                     ])
+
+aug_transform = transforms.Compose([
+                                    transforms.RandomRotation(180),
+                                    transforms.RandomHorizontalFlip(),
+                                    SquarePad(),
+                                    transforms.Resize([224, 224]),
+                                    transforms.ToTensor(),
+                                    normalize
+])
+
 
 class CatFaceDataset(torch.utils.data.Dataset):
     #Dict {image:Tensor(B*224*224), label:int, index:int}
@@ -70,10 +88,9 @@ class CatFaceDataset(torch.utils.data.Dataset):
         return len(self.imgs)
 
 
-
-class ACNN(nn.Module):
+class CatFaceIdentifier(nn.Module):
     def __init__(self):
-        super(ACNN, self).__init__()
+        super(CatFaceIdentifier, self).__init__()
 
         #Get layers from pretrained resnet34
         resnet = resnet34(pretrained = True)
@@ -99,11 +116,8 @@ class ACNN(nn.Module):
         rec_freeze(self.conv1)
         rec_freeze(self.layer1)
         rec_freeze(self.layer2)
-        #define new layers for Adaptive Convolution
-        self.param_ln1 = nn.Linear(1, 1)
 
-    #TODO: freeze some layers
-    def forward(self, x, cat_face_data):
+    def forward(self, x):
         #B*3*224*224
         x = self.conv1(x)
         x = self.bn1(x)
@@ -125,6 +139,7 @@ class ACNN(nn.Module):
 
         return x
 
+
 def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
     train_losses = []
     val_losses = []
@@ -138,9 +153,7 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
         for target in train_dataloader:
             x = target["image"].to(device)
             label = target["label"].to(device)
-            cat_face_data = face_data[label, target["index"], :]
-
-            pred = model(x, cat_face_data)
+            pred = model(x)
             optimizer.zero_grad()
             train_loss = fitness(pred, label)
             train_loss.backward()
@@ -161,9 +174,8 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
             with torch.no_grad():
                 x = target["image"].to(device)
                 label = target["label"].to(device)
-                cat_face_data = face_data[label, target["index"], :]
 
-                pred = model(x, cat_face_data)
+                pred = model(x)
                 val_loss = fitness(pred, label)
                 _, correct = torch.max(pred, 1)
                 correct_cnt += (correct == label).sum().item()
@@ -171,7 +183,8 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
 
         val_losses.append(val_loss)
         val_accs.append(correct_cnt/cnt)
-
+        if ((epoch >=2) and (val_accs[-1]<val_accs[-2])):
+            scheduler.step()
         print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}")
 
     return train_losses, val_losses, train_accs, val_accs
@@ -179,17 +192,20 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
 
 
 if __name__=="__main__":
-    dataset = CatFaceDataset(root, temp_transform)
+    dataset_train = CatFaceDataset(root, aug_transform)
+    dataset_val = CatFaceDataset(root, val_transform)
     #Use ConcatDataset to use refined data
-    train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size = val_set_ratio)
-    train_dataset = torch.utils.data.Subset(dataset, train_idx)
-    val_dataset = torch.utils.data.Subset(dataset, val_idx)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, 10, True, num_workers = 8)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, 10, True, num_workers = 8)
+    train_idx, val_idx = train_test_split(list(range(len(dataset_train))), test_size = val_set_ratio)
+    train_dataset = torch.utils.data.Subset(dataset_train, train_idx)
+    val_dataset = torch.utils.data.Subset(dataset_val, val_idx)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size, True, num_workers = 8)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size, True, num_workers = 8)
+
 
     # Define Model
-    model = ACNN().to(device)
+    model = CatFaceIdentifier().to(device)
     optimizer = torch.optim.SGD(model.parameters(), learning_rate)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.5)
     fitness = nn.CrossEntropyLoss()
 
     train_losses, val_losses, train_accs, val_accs = run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness)
