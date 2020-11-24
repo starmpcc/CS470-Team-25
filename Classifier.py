@@ -193,12 +193,6 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
 
 
 if __name__=="__main__":
-'''
-    dataset_org = CatFaceDataset(root, temp_transform)
-    dataset_aug1 = CatFaceDataset(root, aug_transform1)
-    dataset_aug2 = CatFaceDataset(root, aug_transform2)
-    dataset_exp = torch.utils.data.ConcatDataset((dataset_org, dataset_aug1, dataset_aug2))
-'''
     dataset_train = CatFaceDataset(root, aug_transform)
     dataset_val = CatFaceDataset(root, val_transform)
     #Use ConcatDataset to use refined data
