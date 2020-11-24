@@ -12,6 +12,17 @@ from sklearn.model_selection import train_test_split
 root = os.getcwd()
 device = torch.device("cuda")
 
+
+# SquarePad
+class SquarePad:
+	def __call__(self, image):
+		w, h = image.size
+		max_wh = np.max([w, h])
+		hp = int((max_wh - w) / 2)
+		vp = int((max_wh - h) / 2)
+		padding = (hp, vp, hp, vp)
+		return transforms.functional.pad(image, padding, 0, 'constant')
+
 #define hyperparameters
 val_set_ratio = 0.25
 learning_rate = 0.1
@@ -29,6 +40,7 @@ def rec_freeze(model):
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 val_transform = transforms.Compose([
+                                    SquarePad(),
                                     transforms.Resize([224, 224]),
                                     transforms.ToTensor(),
                                     normalize
@@ -37,6 +49,7 @@ val_transform = transforms.Compose([
 aug_transform = transforms.Compose([
                                     transforms.RandomRotation(180),
                                     transforms.RandomHorizontalFlip(),
+                                    SquarePad(),
                                     transforms.Resize([224, 224]),
                                     transforms.ToTensor(),
                                     normalize
