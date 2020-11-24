@@ -13,7 +13,23 @@ root = os.getcwd()
 device = torch.device("cuda")
 
 
-# SquarePad
+#define hyperparameters
+val_set_ratio = 0.25
+learning_rate = 0.1
+num_epoches = 50
+num_classes = 91
+batch_size = 200
+aug_mul = 1
+
+#Utility Functions
+def rec_freeze(model):
+    for child in model.children():
+        for param in child.parameters():
+            param.requires_grad = False
+        rec_freeze(child)
+
+
+# Transforms and Transform-Support Functions for data
 class SquarePad:
 	def __call__(self, image):
 		w, h = image.size
@@ -23,22 +39,9 @@ class SquarePad:
 		padding = (hp, vp, hp, vp)
 		return transforms.functional.pad(image, padding, 0, 'constant')
 
-#define hyperparameters
-val_set_ratio = 0.25
-learning_rate = 0.1
-num_epoches = 50
-num_classes = 91
-batch_size = 200
-aug_mul = 1
-def rec_freeze(model):
-    for child in model.children():
-        for param in child.parameters():
-            param.requires_grad = False
-        rec_freeze(child)
-
-
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
 val_transform = transforms.Compose([
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
@@ -54,6 +57,7 @@ aug_transform = transforms.Compose([
                                     transforms.ToTensor(),
                                     normalize
 ])
+
 
 class CatFaceDataset(torch.utils.data.Dataset):
     #Dict {image:Tensor(B*224*224), label:int, index:int}
@@ -84,9 +88,9 @@ class CatFaceDataset(torch.utils.data.Dataset):
         return len(self.imgs)
 
 
-class ACNN(nn.Module):
+class CatFaceIdentifier(nn.Module):
     def __init__(self):
-        super(ACNN, self).__init__()
+        super(CatFaceIdentifier, self).__init__()
 
         #Get layers from pretrained resnet34
         resnet = resnet34(pretrained = True)
@@ -134,11 +138,6 @@ class ACNN(nn.Module):
         x = self.fc(x)
 
         return x
-
-
-
-
-
 
 
 def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
@@ -204,7 +203,7 @@ if __name__=="__main__":
 
 
     # Define Model
-    model = ACNN().to(device)
+    model = CatFaceIdentifier().to(device)
     optimizer = torch.optim.SGD(model.parameters(), learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.5)
     fitness = nn.CrossEntropyLoss()

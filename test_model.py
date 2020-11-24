@@ -1,4 +1,4 @@
-from Classifier import ACNN, CatFaceDataset, num_epoches
+from Classifier import CatFaceIdentifier, CatFaceDataset, num_epoches, SquarePad
 import torch
 import numpy as np
 from PIL import Image
@@ -11,7 +11,7 @@ root = os.getcwd()
 device = torch.device('cuda')
 
 #load Model
-model = ACNN().to(device)
+model = CatFaceIdentifier().to(device)
 checkpoint = torch.load(os.path.join(root, "ckpt.pt"))
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()

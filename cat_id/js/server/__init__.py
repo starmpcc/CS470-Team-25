@@ -6,9 +6,9 @@ app = Flask(__name__)
 app.debug = True
 
 root = os.getcwd()
-from Classifier import ACNN, temp_transform
+from Classifier import CatFaceIdentifier, temp_transform
 
-model = ACNN().cuda()
+model = CatFaceIdentifier().cuda()
 checkpoint = torch.load(os.path.join(root, '..', "ckpt.pt"))
 model.load_state_dict(checkpoint['model_state_dict'])
 
