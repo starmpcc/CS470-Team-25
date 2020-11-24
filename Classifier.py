@@ -8,9 +8,30 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet34
 from PIL import Image
 from sklearn.model_selection import train_test_split
+import torchvision.transforms.functional as trF
 
 root = os.getcwd()
 device = torch.device("cuda")
+
+'''
+# SquarePad
+class SquarePad:
+	def __call__(self, image):
+		w, h = image.size
+		max_wh = np.max([w, h])
+		hp = int((max_wh - w) / 2)
+		vp = int((max_wh - h) / 2)
+		padding = (hp, vp, hp, vp)
+		return trF.pad(image, padding, 0, 'constant')
+# Example of use
+transform=transforms.Compose([
+    SquarePad(),
+    transforms.Resize(image_size),
+    transforms.CenterCrop(image_size),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+])
+'''
 
 #define hyperparameters
 val_set_ratio = 0.25
