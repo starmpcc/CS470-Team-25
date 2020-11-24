@@ -1,4 +1,4 @@
-from Classifier import ACNN, CatFaceDataset, temp_transform, num_epoches
+from Classifier import ACNN, CatFaceDataset, num_epoches
 import torch
 import numpy as np
 from PIL import Image
