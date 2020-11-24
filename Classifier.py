@@ -14,7 +14,7 @@ device = torch.device("cuda")
 
 #define hyperparameters
 val_set_ratio = 0.25
-learning_rate = 0.01
+learning_rate = 0.1
 num_epoches = 50
 num_classes = 91
 batch_size = 200
@@ -28,24 +28,16 @@ def rec_freeze(model):
 
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-#temporary loader for raw image
-temp_transform = transforms.Compose([
-                                    transforms.Resize(224),
-                                    transforms.CenterCrop(224),
+val_transform = transforms.Compose([
+                                    transforms.Resize([224, 224]),
                                     transforms.ToTensor(),
                                     normalize
                                     ])
 
 aug_transform = transforms.Compose([
-                                    transforms.RandomAffine(30),
-                                    transforms.RandomPerspective(),
-                                    transforms.RandomRotation(90, expand=False),
-                                    transforms.ColorJitter(brightness=(0.2, 2), 
-                                            contrast=(0.3, 2), 
-                                            saturation=(0.2, 2), 
-                                            hue=(-0.3, 0.3)),
-                                    transforms.Resize(224),
-                                    transforms.CenterCrop(224),
+                                    transforms.RandomRotation(180),
+                                    transforms.RandomHorizontalFlip(),
+                                    transforms.Resize([224, 224]),
                                     transforms.ToTensor(),
                                     normalize
 ])
@@ -179,7 +171,8 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
 
         val_losses.append(val_loss)
         val_accs.append(correct_cnt/cnt)
-
+        if ((epoch >=2) and (val_accs[-1]<val_accs[-2])):
+            scheduler.step()
         print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}")
 
     return train_losses, val_losses, train_accs, val_accs
@@ -187,8 +180,8 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
 
 
 if __name__=="__main__":
-    dataset_train = CatFaceDataset(root, temp_transform)
-    dataset_val = CatFaceDataset(root, aug_transform)
+    dataset_train = CatFaceDataset(root, aug_transform)
+    dataset_val = CatFaceDataset(root, val_transform)
     #Use ConcatDataset to use refined data
     train_idx, val_idx = train_test_split(list(range(len(dataset_train))), test_size = val_set_ratio)
     train_dataset = torch.utils.data.Subset(dataset_train, train_idx)
@@ -200,6 +193,7 @@ if __name__=="__main__":
     # Define Model
     model = ACNN().to(device)
     optimizer = torch.optim.SGD(model.parameters(), learning_rate)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.5)
     fitness = nn.CrossEntropyLoss()
 
     train_losses, val_losses, train_accs, val_accs = run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness)
