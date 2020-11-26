@@ -1,4 +1,4 @@
-from Classifier import CatFaceIdentifier, CatFaceDataset, num_epoches, SquarePad
+from Classifier import CatFaceIdentifier, CatFaceDataset, num_epoches, SquarePad, val_transform
 import torch
 import numpy as np
 from PIL import Image
@@ -12,7 +12,7 @@ device = torch.device('cuda')
 
 #load Model
 model = CatFaceIdentifier().to(device)
-checkpoint = torch.load(os.path.join(root, "ckpt.pt"))
+checkpoint = torch.load(os.path.join(root, "ckpt_101_1000epoch.pt"))
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
@@ -48,4 +48,8 @@ def show_result():
     plt.show()
 
 show_plot()
-show_result()
+#show_result()
+
+def model_apply(img):
+    img = val_transform(img)
+    return model.eval(img)

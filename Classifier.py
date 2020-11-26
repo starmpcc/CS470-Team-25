@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchvision
 import torch.nn.functional as F
 import torchvision.transforms as transforms
-from torchvision.models import resnet34
+from torchvision.models import resnet101
 from PIL import Image
 from sklearn.model_selection import train_test_split
 '''
@@ -20,7 +20,7 @@ device = torch.device("cuda")
 #define hyperparameters
 val_set_ratio = 0.25
 learning_rate = 0.1
-num_epoches = 50
+num_epoches = 1000
 num_classes = 91
 batch_size = 200
 aug_mul = 1
@@ -78,13 +78,13 @@ class CatFaceDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img = Image.open(self.imgs[idx]).convert("RGB")
         img = self.transform(img)
-	'''
-	#HOG Feature Extraction
-        npimg = img.numpy()
-        fd, npimg = hog(npimg, orientations=8, pixels_per_cell=(16, 16),
-                    cells_per_block=(1, 1), visualize=True, multichannel=True)
-        img = torch.Tensor(img)
-	'''
+        '''
+        #HOG Feature Extraction
+            npimg = img.numpy()
+            fd, npimg = hog(npimg, orientations=8, pixels_per_cell=(16, 16),
+                        cells_per_block=(1, 1), visualize=True, multichannel=True)
+            img = torch.Tensor(img)
+        '''
         label = self.imgs[idx].split('/')[-2].split('_')[-1]
         index = int(os.path.basename(self.imgs[idx]).split('.')[0])
         target = {}        
@@ -103,13 +103,13 @@ class CatFaceIdentifier(nn.Module):
     def __init__(self):
         super(CatFaceIdentifier, self).__init__()
 
-        #Get layers from pretrained resnet34
-        resnet = resnet34(pretrained = True)
+        #Get layers from pretrained resnet101
+        resnet = resnet101(pretrained = True)
         l = []
         for child in resnet.children():
             l.append(child)
         
-        #Original layers from resnet34
+        #Original layers from resnet101
         self.conv1 = l[0]
         self.bn1 = l[1]
         self.relu = l[2]
@@ -122,7 +122,7 @@ class CatFaceIdentifier(nn.Module):
 #        self.fc = l[9]
 
         #Re-Define final fc layer to adapt our model
-        self.fc = nn.Linear(512, num_classes)
+        self.fc = nn.Linear(512*4, num_classes)
 
         rec_freeze(self.conv1)
         rec_freeze(self.layer1)
@@ -236,9 +236,4 @@ if __name__=="__main__":
     #Save Model
     torch.save({'epoch':num_epoches, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
                  'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
-<<<<<<< HEAD
-                 "train_dataloader":train_dataloader, "val_dataloader":val_dataloader, "train_top5":train_top5, "val_top5":val_top5},
-                  os.path.join(root, "ckpt.pt"))
-=======
                  "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
->>>>>>> 895cc96b2b4773dd41b98ea6d9af695332bcdaba
