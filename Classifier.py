@@ -8,10 +8,9 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet101
 from PIL import Image
 from sklearn.model_selection import train_test_split
-'''
-#HOG Feature Extraction
 from skimage.feature import hog
-'''
+import time
+
 
 root = os.getcwd()
 device = torch.device("cuda")
@@ -21,8 +20,8 @@ device = torch.device("cuda")
 val_set_ratio = 0.25
 learning_rate = 0.1
 num_epoches = 1000
-num_classes = 91
-batch_size = 200
+num_classes = 87
+batch_size = 32
 aug_mul = 1
 
 #Utility Functions
@@ -43,13 +42,23 @@ class SquarePad:
 		padding = (hp, vp, hp, vp)
 		return transforms.functional.pad(image, padding, 0, 'constant')
 
+class Hog:
+    def __call__(self, image):
+        img = np.array(image)
+        _, img =  hog(img, orientations=8, pixels_per_cell=(16, 16),
+                            cells_per_block=(1, 1), visualize=True, multichannel=True)
+        img = torch.from_numpy(img).unsqueeze(0).repeat(3,1,1)
+        img = img.type(torch.FloatTensor)
+
+        return img
+    
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 val_transform = transforms.Compose([
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    transforms.ToTensor(),
+                                    Hog(),
                                     normalize
                                     ])
 
@@ -58,7 +67,7 @@ aug_transform = transforms.Compose([
                                     transforms.RandomHorizontalFlip(),
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    transforms.ToTensor(),
+                                    Hog(),
                                     normalize
 ])
 
@@ -78,21 +87,12 @@ class CatFaceDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img = Image.open(self.imgs[idx]).convert("RGB")
         img = self.transform(img)
-        '''
-        #HOG Feature Extraction
-            npimg = img.numpy()
-            fd, npimg = hog(npimg, orientations=8, pixels_per_cell=(16, 16),
-                        cells_per_block=(1, 1), visualize=True, multichannel=True)
-            img = torch.Tensor(img)
-        '''
         label = self.imgs[idx].split('/')[-2].split('_')[-1]
-        index = int(os.path.basename(self.imgs[idx]).split('.')[0])
         target = {}        
         target["image"] = img
 
         #To prevent Cuda error
-        target["label"] = int(label)-1
-        target["index"] = int(index)
+        target["label"] = int(label)
         return target
     
     def __len__(self):
@@ -151,7 +151,7 @@ class CatFaceIdentifier(nn.Module):
         return x
 
 
-def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
+def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, best_accs):
     train_losses = []
     val_losses = []
     train_accs = []
@@ -209,12 +209,17 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
         if ((epoch >=2) and (val_accs[-1]<val_accs[-2])):
             scheduler.step()
         print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}, train_top5: {train_top5[-1]}, val_top5: {val_top5[-1]}")
-
-    return train_losses, val_losses, train_accs, val_accs, train_top5, val_top5
+        if ((epoch >=2) and (val_accs[-1] > best_accs)):
+            torch.save({'epoch':epoch, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
+                        'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
+                        "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
+            best_accs = val_accs[-1]
 
 
 
 if __name__=="__main__":
+    t = time.time()
+
     dataset_train = CatFaceDataset(root, aug_transform)
     dataset_val = CatFaceDataset(root, val_transform)
     #Use ConcatDataset to use refined data
@@ -231,9 +236,7 @@ if __name__=="__main__":
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.8)
     fitness = nn.CrossEntropyLoss()
 
-    train_losses, val_losses, train_accs, val_accs, train_top5, val_top5 = run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness)
-
+    run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, 0.7)
+    print(time.gmtime(time.time()-t))
     #Save Model
-    torch.save({'epoch':num_epoches, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
-                 'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
-                 "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
+
