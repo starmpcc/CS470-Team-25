@@ -8,6 +8,10 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet34
 from PIL import Image
 from sklearn.model_selection import train_test_split
+'''
+#HOG Feature Extraction
+from skimage.feature import hog
+'''
 
 root = os.getcwd()
 device = torch.device("cuda")
@@ -74,6 +78,13 @@ class CatFaceDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img = Image.open(self.imgs[idx]).convert("RGB")
         img = self.transform(img)
+	'''
+	#HOG Feature Extraction
+        npimg = img.numpy()
+        fd, npimg = hog(npimg, orientations=8, pixels_per_cell=(16, 16),
+                    cells_per_block=(1, 1), visualize=True, multichannel=True)
+        img = torch.Tensor(img)
+	'''
         label = self.imgs[idx].split('/')[-2].split('_')[-1]
         index = int(os.path.basename(self.imgs[idx]).split('.')[0])
         target = {}        
@@ -145,11 +156,14 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
     val_losses = []
     train_accs = []
     val_accs = []
+    train_top5 = []
+    val_top5 = []
     for epoch in range(num_epoches):
         model.train()
         cnt = 0
         correct_cnt = 0
         train_loss = 0.0
+        top5_cnt = 0
         for target in train_dataloader:
             x = target["image"].to(device)
             label = target["label"].to(device)
@@ -158,18 +172,22 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
             train_loss = fitness(pred, label)
             train_loss.backward()
             optimizer.step()
-            
             _, correct = torch.max(pred, 1)
             correct_cnt += (correct == label).sum().item()
+            _, top5 = torch.topk(pred, 5, 1)
+            for i in range(len(label)):
+                if (label[i] in top5[i]):
+                    top5_cnt+=1
             cnt += x.data.size(0)
 
         train_losses.append(train_loss)
         train_accs.append(correct_cnt/cnt)
-
+        train_top5.append(top5_cnt/cnt)
         model.eval()
         cnt = 0
         correct_cnt = 0
         val_loss = 0.0
+        top5_cnt = 0
         for target in val_dataloader:
             with torch.no_grad():
                 x = target["image"].to(device)
@@ -179,15 +197,20 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness):
                 val_loss = fitness(pred, label)
                 _, correct = torch.max(pred, 1)
                 correct_cnt += (correct == label).sum().item()
+                _, top5 = torch.topk(pred, 5, 1)
+                for i in range(len(label)):
+                    if (label[i] in top5[i]):
+                        top5_cnt+=1
                 cnt += x.data.size(0)
 
         val_losses.append(val_loss)
         val_accs.append(correct_cnt/cnt)
+        val_top5.append(top5_cnt/cnt)
         if ((epoch >=2) and (val_accs[-1]<val_accs[-2])):
             scheduler.step()
-        print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}")
+        print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}, train_top5: {train_top5[-1]}, val_top5: {val_top5[-1]}")
 
-    return train_losses, val_losses, train_accs, val_accs
+    return train_losses, val_losses, train_accs, val_accs, train_top5, val_top5
 
 
 
@@ -205,12 +228,17 @@ if __name__=="__main__":
     # Define Model
     model = CatFaceIdentifier().to(device)
     optimizer = torch.optim.SGD(model.parameters(), learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.5)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.8)
     fitness = nn.CrossEntropyLoss()
 
-    train_losses, val_losses, train_accs, val_accs = run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness)
+    train_losses, val_losses, train_accs, val_accs, train_top5, val_top5 = run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness)
 
     #Save Model
     torch.save({'epoch':num_epoches, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
                  'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
+<<<<<<< HEAD
+                 "train_dataloader":train_dataloader, "val_dataloader":val_dataloader, "train_top5":train_top5, "val_top5":val_top5},
+                  os.path.join(root, "ckpt.pt"))
+=======
                  "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
+>>>>>>> 895cc96b2b4773dd41b98ea6d9af695332bcdaba
