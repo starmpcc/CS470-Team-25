@@ -8,6 +8,10 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet34
 from PIL import Image
 from sklearn.model_selection import train_test_split
+'''
+#HOG Feature Extraction
+from skimage.feature import hog
+'''
 
 root = os.getcwd()
 device = torch.device("cuda")
@@ -74,6 +78,13 @@ class CatFaceDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img = Image.open(self.imgs[idx]).convert("RGB")
         img = self.transform(img)
+	'''
+	#HOG Feature Extraction
+        npimg = img.numpy()
+        fd, npimg = hog(npimg, orientations=8, pixels_per_cell=(16, 16),
+                    cells_per_block=(1, 1), visualize=True, multichannel=True)
+        img = torch.Tensor(img)
+	'''
         label = self.imgs[idx].split('/')[-2].split('_')[-1]
         index = int(os.path.basename(self.imgs[idx]).split('.')[0])
         target = {}        
@@ -225,5 +236,9 @@ if __name__=="__main__":
     #Save Model
     torch.save({'epoch':num_epoches, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
                  'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
+<<<<<<< HEAD
                  "train_dataloader":train_dataloader, "val_dataloader":val_dataloader, "train_top5":train_top5, "val_top5":val_top5},
                   os.path.join(root, "ckpt.pt"))
+=======
+                 "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
+>>>>>>> 895cc96b2b4773dd41b98ea6d9af695332bcdaba
