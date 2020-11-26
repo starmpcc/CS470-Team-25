@@ -20,7 +20,7 @@ device = torch.device("cuda")
 val_set_ratio = 0.25
 learning_rate = 0.1
 num_epoches = 1000
-num_classes = 87
+num_classes = 88
 batch_size = 32
 aug_mul = 1
 
@@ -53,7 +53,7 @@ class Hog:
         return img
     
 normalize = transforms.Normalize(
-    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    mean=[0.9154, 0.9154, 0.9154], std=[2.5827, 2.5827, 2.5827])
 
 val_transform = transforms.Compose([
                                     SquarePad(),
@@ -104,7 +104,7 @@ class CatFaceIdentifier(nn.Module):
         super(CatFaceIdentifier, self).__init__()
 
         #Get layers from pretrained resnet101
-        resnet = resnet101(pretrained = True)
+        resnet = resnet101(pretrained = False)
         l = []
         for child in resnet.children():
             l.append(child)
@@ -124,9 +124,9 @@ class CatFaceIdentifier(nn.Module):
         #Re-Define final fc layer to adapt our model
         self.fc = nn.Linear(512*4, num_classes)
 
-        rec_freeze(self.conv1)
-        rec_freeze(self.layer1)
-        rec_freeze(self.layer2)
+#        rec_freeze(self.conv1)
+#        rec_freeze(self.layer1)
+#        rec_freeze(self.layer2)
 
     def forward(self, x):
         #B*3*224*224
