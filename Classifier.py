@@ -238,5 +238,4 @@ if __name__=="__main__":
 
     run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, 0.7)
     print(time.gmtime(time.time()-t))
-    #Save Model
 
