@@ -8,7 +8,6 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet101
 from PIL import Image
 from sklearn.model_selection import train_test_split
-from skimage.feature import hog
 import time
 
 
@@ -20,9 +19,8 @@ device = torch.device("cuda")
 val_set_ratio = 0.25
 learning_rate = 0.1
 num_epoches = 1000
-num_classes = 87
-batch_size = 32
-aug_mul = 1
+num_classes = 88
+batch_size = 64
 
 #Utility Functions
 def rec_freeze(model):
@@ -42,23 +40,14 @@ class SquarePad:
 		padding = (hp, vp, hp, vp)
 		return transforms.functional.pad(image, padding, 0, 'constant')
 
-class Hog:
-    def __call__(self, image):
-        img = np.array(image)
-        _, img =  hog(img, orientations=8, pixels_per_cell=(16, 16),
-                            cells_per_block=(1, 1), visualize=True, multichannel=True)
-        img = torch.from_numpy(img).unsqueeze(0).repeat(3,1,1)
-        img = img.type(torch.FloatTensor)
 
-        return img
-    
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 val_transform = transforms.Compose([
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    Hog(),
+                                    transforms.ToTensor(),
                                     normalize
                                     ])
 
@@ -67,7 +56,7 @@ aug_transform = transforms.Compose([
                                     transforms.RandomHorizontalFlip(),
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    Hog(),
+                                    transforms.ToTensor(),
                                     normalize
 ])
 
@@ -215,7 +204,9 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, bes
                         "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
             best_accs = val_accs[-1]
 
-
+    torch.save({'epoch':epoch, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
+                'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
+                "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
 
 if __name__=="__main__":
     t = time.time()
