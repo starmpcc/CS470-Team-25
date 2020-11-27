@@ -58,7 +58,7 @@ normalize = transforms.Normalize(
 val_transform = transforms.Compose([
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    Hog(),
+                                    #Hog(),
                                     normalize
                                     ])
 
@@ -67,7 +67,7 @@ aug_transform = transforms.Compose([
                                     transforms.RandomHorizontalFlip(),
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    Hog(),
+                                    #Hog(),
                                     normalize
 ])
 
