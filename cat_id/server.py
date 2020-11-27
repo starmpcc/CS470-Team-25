@@ -1,3 +1,3 @@
-from flask import app
+from flask_deep import app
 
-app.run(host='0.0.0.0')
+app.run(host='127.0.0.1')
