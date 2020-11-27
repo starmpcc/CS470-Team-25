@@ -7,6 +7,9 @@ function readURL(input) {
             $('.inp_block').hide();
             $('.b_block').css('display','block');
             $('.c_block').css('display', 'block');
+            return function(a){
+                e.src = a.target.result;
+            }
         };
 
         reader.readAsDataURL(input.files[0]);
