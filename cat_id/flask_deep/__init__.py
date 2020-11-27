@@ -2,41 +2,47 @@ import os
 import sys
 from flask import *
 import torch
+from flask import Flask, request
+from werkzeug.utils import secure_filename
 
-
+root = os.getcwd()
 
 app = Flask(__name__)
 app.debug = True
 
-root = os.getcwd()
-<<<<<<< Updated upstream
-from Classifier import CatFaceIdentifier, val_transform
-=======
+from .Classifier import CatFaceIdentifier, val_transform
 
-from Classifier import CatFaceIdentifier, temp_transform
->>>>>>> Stashed changes
 
-model = CatFaceIdentifier().cuda()
-checkpoint = torch.load(os.path.join(root, '..', "ckpt.pt"))
-model.load_state_dict(checkpoint['model_state_dict'])
+'''
+Import classifier
+TODO : Activate the comments
+TODO : In Classifier.py, val_transform must be const.
+'''
+#model = CatFaceIdentifier().cuda()
+#checkpoint = torch.load(root+"/flask_deep/ckpt.pt")
+#model.load_state_dict(checkpoint['model_state_dict'])
+
+user_img_src = "images/cat.jpg"
 
 @app.route('/')
 def index():
-    return render_template('upload.html')
+    return render_template('upload.html', user_img = user_img_src)
 
-
-@app.route('/image_get')
-def image_get():
-    return render_template('upload.html')
-
+@app.route('/upload_post')
+def upload_post():
+    return render_template('upload.html', user_img = user_img_src)
 
 @app.route('/result_post', methods = ['GET', 'POST'])
 def result_post():
-    if request.method == 'POST':
+    pred = -1
+    if request.method == "POST" :
         user_img = request.files['user_img']
-        user_img.save("./flask_deep/images/"+str(user_img.filename))
-        #Need to add Preprocess output
-        img = temp_transform(user_img)
-        #Suggestion: Get Video -> Can make the accs better
-        pred = model(img)
-    return render_template('result.html', pred = pred)
+        user_img.save(os.path.join(root, "flask_deep", "static", 'images/{}'.format(secure_filename(user_img.filename))))
+        '''
+        classify given image
+        TODO : Activate the comments
+        '''
+        user_img_src = 'images/{}'.format(secure_filename(user_img.filename))
+        #img = val_transform(user_img)
+        #pred = model(img)
+    return render_template('result.html', user_img=user_img_src, pred = pred)
