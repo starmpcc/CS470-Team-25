@@ -13,4 +13,4 @@
 - Uncomment the lines which activates model in flask_deep/__init__.py : flagged with "TODO"
 - Make val_tranform be imported to __init__.py
 - Resize the photo in result.html
-- Resize the font: "Class is {pred}"
+- Resize the font: "Class is {pred}" in result.html
