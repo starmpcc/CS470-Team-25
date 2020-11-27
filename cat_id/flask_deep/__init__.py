@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.debug = True
 
 root = os.getcwd()
-from Classifier import CatFaceIdentifier, temp_transform
+from Classifier import CatFaceIdentifier, val_transform
 
 model = CatFaceIdentifier().cuda()
 checkpoint = torch.load(os.path.join(root, '..', "ckpt.pt"))
