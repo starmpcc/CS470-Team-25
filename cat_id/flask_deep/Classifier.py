@@ -20,7 +20,7 @@ device = torch.device("cuda")
 val_set_ratio = 0.25
 learning_rate = 0.1
 num_epoches = 1000
-num_classes = 87
+num_classes = 88
 batch_size = 32
 aug_mul = 1
 
@@ -42,15 +42,6 @@ class SquarePad:
 		padding = (hp, vp, hp, vp)
 		return transforms.functional.pad(image, padding, 0, 'constant')
 
-class Hog:
-    def __call__(self, image):
-        img = np.array(image)
-        _, img =  hog(img, orientations=8, pixels_per_cell=(16, 16),
-                            cells_per_block=(1, 1), visualize=True, multichannel=True)
-        img = torch.from_numpy(img).unsqueeze(0).repeat(3,1,1)
-        img = img.type(torch.FloatTensor)
-
-        return img
     
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -58,7 +49,7 @@ normalize = transforms.Normalize(
 val_transform = transforms.Compose([
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    #Hog(),
+                                    transforms.ToTensor(),
                                     normalize
                                     ])
 
@@ -67,7 +58,7 @@ aug_transform = transforms.Compose([
                                     transforms.RandomHorizontalFlip(),
                                     SquarePad(),
                                     transforms.Resize([224, 224]),
-                                    #Hog(),
+                                    transforms.ToTensor(),
                                     normalize
 ])
 
@@ -149,92 +140,3 @@ class CatFaceIdentifier(nn.Module):
         x = self.fc(x)
 
         return x
-
-
-def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, best_accs):
-    train_losses = []
-    val_losses = []
-    train_accs = []
-    val_accs = []
-    train_top5 = []
-    val_top5 = []
-    for epoch in range(num_epoches):
-        model.train()
-        cnt = 0
-        correct_cnt = 0
-        train_loss = 0.0
-        top5_cnt = 0
-        for target in train_dataloader:
-            x = target["image"].to(device)
-            label = target["label"].to(device)
-            pred = model(x)
-            optimizer.zero_grad()
-            train_loss = fitness(pred, label)
-            train_loss.backward()
-            optimizer.step()
-            _, correct = torch.max(pred, 1)
-            correct_cnt += (correct == label).sum().item()
-            _, top5 = torch.topk(pred, 5, 1)
-            for i in range(len(label)):
-                if (label[i] in top5[i]):
-                    top5_cnt+=1
-            cnt += x.data.size(0)
-
-        train_losses.append(train_loss)
-        train_accs.append(correct_cnt/cnt)
-        train_top5.append(top5_cnt/cnt)
-        model.eval()
-        cnt = 0
-        correct_cnt = 0
-        val_loss = 0.0
-        top5_cnt = 0
-        for target in val_dataloader:
-            with torch.no_grad():
-                x = target["image"].to(device)
-                label = target["label"].to(device)
-
-                pred = model(x)
-                val_loss = fitness(pred, label)
-                _, correct = torch.max(pred, 1)
-                correct_cnt += (correct == label).sum().item()
-                _, top5 = torch.topk(pred, 5, 1)
-                for i in range(len(label)):
-                    if (label[i] in top5[i]):
-                        top5_cnt+=1
-                cnt += x.data.size(0)
-
-        val_losses.append(val_loss)
-        val_accs.append(correct_cnt/cnt)
-        val_top5.append(top5_cnt/cnt)
-        if ((epoch >=2) and (val_accs[-1]<val_accs[-2])):
-            scheduler.step()
-        print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}, train_top5: {train_top5[-1]}, val_top5: {val_top5[-1]}")
-        if ((epoch >=2) and (val_accs[-1] > best_accs)):
-            torch.save({'epoch':epoch, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
-                        'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
-                        "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
-            best_accs = val_accs[-1]
-
-
-
-if __name__=="__main__":
-    t = time.time()
-
-    dataset_train = CatFaceDataset(root, aug_transform)
-    dataset_val = CatFaceDataset(root, val_transform)
-    #Use ConcatDataset to use refined data
-    train_idx, val_idx = train_test_split(list(range(len(dataset_train))), test_size = val_set_ratio)
-    train_dataset = torch.utils.data.Subset(dataset_train, train_idx)
-    val_dataset = torch.utils.data.Subset(dataset_val, val_idx)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size, True, num_workers = 8)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size, True, num_workers = 8)
-
-
-    # Define Model
-    model = CatFaceIdentifier().to(device)
-    optimizer = torch.optim.SGD(model.parameters(), learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, 0.8)
-    fitness = nn.CrossEntropyLoss()
-
-    run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, 0.7)
-    print(time.gmtime(time.time()-t))
