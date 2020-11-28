@@ -48,4 +48,10 @@ def result_post():
         res = model(img)
         _, pred = torch.max(res,1)
         _, top5 = torch.topk(res, 5, 1)
-    return render_template('result.html', user_img=user_img_src, pred = pred, top5 = top5)
+        pred = pred.item()
+        pred_src = os.path.join(root, "flask_deep", "static", "categories", 'cat_'+str(pred)+'.jpg')
+        top5_list = []
+        for i in top5.tolist():
+            top5_list.append(root, "flask_deep", "static", "categories", 'cat_'+str(i)+'.jpg')
+    #Return predicted image source and top5 images source list
+    return render_template('result.html', user_img=user_img_src, pred = pred_src, top5 = top5_list)
