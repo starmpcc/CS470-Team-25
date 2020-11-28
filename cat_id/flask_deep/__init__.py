@@ -18,8 +18,9 @@ Import classifier
 TODO : Activate the comments
 TODO : In Classifier.py, val_transform must be const.
 '''
-model = CatFaceIdentifier().cuda()
-checkpoint = torch.load(root+"/flask_deep/ckpt.pt")
+device = torch.device('cpu')
+model = CatFaceIdentifier()
+checkpoint = torch.load(root+"/flask_deep/ckpt.pt", map_location=device)
 model.load_state_dict(checkpoint['model_state_dict'])
 
 user_img_src = "images/cat.jpg"
@@ -44,7 +45,7 @@ def result_post():
         '''
         user_img_src = 'images/{}'.format(secure_filename(user_img.filename))
         img = Image.open(os.path.join(root, "flask_deep", "static", user_img_src))
-        img = val_transform(img).unsqueeze(0).to('cuda')
+        img = val_transform(img).unsqueeze(0).to('cpu')
         res = model(img)
         _, pred = torch.max(res,1)
         _, top5 = torch.topk(res, 5, 1)
