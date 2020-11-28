@@ -13,7 +13,7 @@ import time
 
 
 root = os.getcwd()
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 
 #define hyperparameters
