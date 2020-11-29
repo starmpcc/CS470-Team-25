@@ -33,8 +33,8 @@
         <div class="row">
             <div class="col-md-3"></div>
             <div class="col-md-6">
-                <p> Your Prediction : Top1 </p>
-                <img id="blah" src="{{url_for('static', filename=pred)}}" alt="your image" width="300"/><br><br>
+                <p> Your Cat </p>
+                <img id="blah" src="{{url_for('static', filename=user_img)}}" alt="your image" width="300"/><br><br>
                 <p> Your Prediction : Top5 </p>
                 <ul class = "list" align="left">
                     {% for item in top5 %}

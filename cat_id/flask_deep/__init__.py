@@ -13,15 +13,17 @@ app.debug = True
 from .Classifier import CatFaceIdentifier, val_transform
 
 
+device = torch.device('cpu')
+model = CatFaceIdentifier()
+checkpoint = torch.load(root + "/flask_deep/ckpt.pt", map_location=device)
+model.load_state_dict(checkpoint['model_state_dict'])
+model.eval()
+
 '''
 Import classifier
 TODO : Activate the comments
 TODO : In Classifier.py, val_transform must be const.
 '''
-device = torch.device('cpu')
-model = CatFaceIdentifier()
-checkpoint = torch.load(root+"/flask_deep/ckpt.pt", map_location=device)
-model.load_state_dict(checkpoint['model_state_dict'])
 
 user_img_src = "images/cat.jpg"
 
@@ -46,7 +48,10 @@ def result_post():
         '''
         user_img_src = 'images/{}.jpg'.format("temp_img")
         img = Image.open(os.path.join(root, "flask_deep", "static", user_img_src))
+        #img = misc.imread(user_img)
+        #img = img[:,:, 3]
         img = val_transform(img).unsqueeze(0).to('cpu')
+        #print(type(user_img))
         res = model(img)
         _, pred = torch.max(res,1)
         _, top5 = torch.topk(res, 5, 1)
@@ -54,7 +59,8 @@ def result_post():
         pred_src = 'categories/cat_'+str(pred)+'.jpg'
         top5_list = []
         top5 = top5[0]
+        print(top5)
         for item in top5.tolist():
             top5_list.append('categories/cat_'+str(item)+'.jpg')
     #Return predicted image source and top5 images source list
-    return render_template('result.html', user_img=user_img_src, pred = pred_src, top5 = top5_list)
+    return render_template('result.html', user_img=user_img_src, pred = user_img_src, top5 = top5_list)
