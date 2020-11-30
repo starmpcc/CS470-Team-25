@@ -18,7 +18,7 @@ device = torch.device("cuda")
 #define hyperparameters
 val_set_ratio = 0.25
 learning_rate = 0.1
-num_epoches = 1000
+num_epoches = 20
 num_classes = 88
 batch_size = 64
 
