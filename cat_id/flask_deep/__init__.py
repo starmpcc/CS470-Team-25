@@ -5,6 +5,7 @@ import torch
 from flask import Flask, request
 from werkzeug.utils import secure_filename
 from PIL import Image
+import random
 root = os.getcwd()
 
 app = Flask(__name__)
@@ -41,12 +42,11 @@ def result_post():
     top5_list = []
     if request.method == "POST" :
         user_img = request.files['user_img']
-        user_img.save(os.path.join(root, "flask_deep", "static", 'images/{}.jpg'.format("temp_img")))
-        '''
-        classify given image
-        TODO : Activate the comments
-        '''
-        user_img_src = 'images/{}.jpg'.format("temp_img")
+        file_name_temp = 'images/{}_{}.jpg'.format("temp_img", random.randint(1, 1000))
+        user_img.save(
+            os.path.join(root, "flask_deep", "static", file_name_temp))
+
+        user_img_src = file_name_temp  # 'images/{}.jpg'.format("temp_img")
         img = Image.open(os.path.join(root, "flask_deep", "static", user_img_src))
         #img = misc.imread(user_img)
         #img = img[:,:, 3]
