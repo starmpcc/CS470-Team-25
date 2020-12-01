@@ -53,14 +53,17 @@ def result_post():
         img = val_transform(img).unsqueeze(0).to('cpu')
         #print(type(user_img))
         res = model(img)
-        _, pred = torch.max(res,1)
-        _, top5 = torch.topk(res, 5, 1)
-        pred = pred.item()
+        res = torch.nn.functional.softmax(res[0], dim=0)
+        _, pred = torch.max(res,0)
+        prob5, top5 = torch.topk(res, 5, 0)
+        #pred = pred.item()
         pred_src = 'categories/cat_'+str(pred)+'.jpg'
         top5_list = []
-        top5 = top5[0]
-        print(top5)
-        for item in top5.tolist():
+        #top5 = (top5[0]).tolist()
+        top5 = (top5).tolist()
+        #prob5_list = (prob5[0]).tolist()
+        prob5_list = ["{0:.2f}%".format(p*100) for p in prob5]
+        for item in top5:
             top5_list.append('categories/cat_'+str(item)+'.jpg')
     #Return predicted image source and top5 images source list
-    return render_template('result.html', user_img=user_img_src, pred = user_img_src, top5 = top5_list)
+    return render_template('result.html', user_img=user_img_src, pred = user_img_src, top5 = top5_list, prob5 = prob5_list)

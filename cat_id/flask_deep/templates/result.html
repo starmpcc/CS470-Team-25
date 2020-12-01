@@ -37,9 +37,23 @@
                 <img id="blah" src="{{url_for('static', filename=user_img)}}" alt="your image" width="300"/><br><br>
                 <p> Your Prediction : Top5 </p>
                 <ul class = "list" align="left">
-                    {% for item in top5 %}
-                        <img id="blah" src="{{url_for('static', filename=item)}}" alt="your image" width="100">
-                    {% endfor %}
+                        <table border="0">
+                            <tr>
+                            {% for item in range(5) %}
+                            <td><img id="blah" src="{{url_for('static', filename=top5[item])}}" alt="your image" width="100"></td>
+                            {% endfor %}
+                            </tr>
+                            <tr>
+                            {% for item in range(5) %}
+                            <td><center>{{item+1}}</td>
+                            {% endfor %}
+                            </tr>
+                            <tr>
+                            {% for item in range(5) %}
+                            <td><center>{{prob5[item]}}</td>
+                            {% endfor %}
+                            </tr>
+                        </table>
                 </ul>
             </div>
         </div>
