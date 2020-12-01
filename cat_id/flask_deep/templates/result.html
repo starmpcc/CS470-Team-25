@@ -34,13 +34,13 @@
             <div class="col-md-3"></div>
             <div class="col-md-6">
                 <p> Your Cat </p>
-                <img id="blah" src="{{url_for('static', filename=user_img)}}" alt="your image" width="300"/><br><br>
+                <img id="blah" src="{{url_for('static', filename=user_img)}}" alt="your image" height="300"/><br><br>
                 <p> Your Prediction : Top5 </p>
                 <ul class = "list" align="left">
                         <table border="0">
                             <tr>
                             {% for item in range(5) %}
-                            <td><img id="blah" src="{{url_for('static', filename=top5[item])}}" alt="your image" width="100"></td>
+                            <td><img id="blah" src="{{url_for('static', filename=top5[item])}}" alt="your image" height="120"></td>
                             {% endfor %}
                             </tr>
                             <tr>
