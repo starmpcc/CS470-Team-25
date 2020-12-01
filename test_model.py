@@ -12,7 +12,7 @@ device = torch.device('cuda')
 
 #load Model
 model = CatFaceIdentifier().to(device)
-checkpoint = torch.load(os.path.join(root, "data_added.pt"))
+checkpoint = torch.load(os.path.join(root, "101_200.pt"))
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
@@ -20,16 +20,16 @@ val_dataloader = checkpoint['val_dataloader']
 
 
 def show_plot():
-    plt.plot(range(1, checkpoint["epoch"]+2), checkpoint['train_losses'], label='train loss')
-    plt.plot(range(1, checkpoint["epoch"]+2), checkpoint['val_losses'], label = 'val loss')
+    plt.plot(range(1, checkpoint["epoch"]+1), checkpoint['train_losses'], label='train loss')
+    plt.plot(range(1, checkpoint["epoch"]+1), checkpoint['val_losses'], label = 'val loss')
     plt.legend(loc="upper left")
     plt.xlabel('epoch')
     plt.ylabel('loss')
 
     plt.show()
 
-    plt.plot(range(1, checkpoint["epoch"]+2), checkpoint['train_accs'], label = 'train acc')
-    plt.plot(range(1, checkpoint["epoch"]+2), checkpoint['val_accs'], label='val acc')
+    plt.plot(range(1, checkpoint["epoch"]+1), checkpoint['train_accs'], label = 'train acc')
+    plt.plot(range(1, checkpoint["epoch"]+1), checkpoint['val_accs'], label='val acc')
     plt.legend()
     plt.xlabel('epoch')
     plt.ylabel("accuracy")
@@ -58,7 +58,7 @@ def show_result():
     plt.tight_layout()
     plt.show()
 
-#show_plot()
+show_plot()
 show_result()
 
 def model_apply(img):

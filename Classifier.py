@@ -18,7 +18,7 @@ device = torch.device("cuda")
 #define hyperparameters
 val_set_ratio = 0.25
 learning_rate = 0.1
-num_epoches = 20
+num_epoches = 200
 num_classes = 88
 batch_size = 64
 
@@ -147,6 +147,8 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, bes
     val_accs = []
     train_top5 = []
     val_top5 = []
+    best_model = None
+    best_optimizer = None
     for epoch in range(num_epoches):
         model.train()
         cnt = 0
@@ -199,15 +201,13 @@ def run_epoches(model, train_dataloader, val_dataloader, optimizer, fitness, bes
             scheduler.step()
         print(f"{epoch}th epoch,    train_loss: {train_loss}, val_loss: {val_loss}, train_acc: {train_accs[-1]}, val_acc: {val_accs[-1]}, train_top5: {train_top5[-1]}, val_top5: {val_top5[-1]}")
         if ((epoch >=2) and (val_accs[-1] > best_accs)):
-            torch.save({'epoch':epoch, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
-                        'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
-                        "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
             best_accs = val_accs[-1]
+            best_model = model.state_dict()
+            best_optimizer = optimizer.state_dict() 
 
-    torch.save({'epoch':epoch, 'model_state_dict':model.state_dict(), 'optimizer_state_dict':optimizer.state_dict(),
-                'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
-                "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "ckpt.pt"))
-
+    torch.save({'epoch':num_epoches, 'model_state_dict':best_model, 'optimizer_state_dict':best_optimizer,
+            'train_losses':train_losses, 'val_losses':val_losses, 'train_accs':train_accs, 'val_accs':val_accs, 
+            "train_dataloader":train_dataloader, "val_dataloader":val_dataloader}, os.path.join(root, "101_200.pt"))
 if __name__=="__main__":
     t = time.time()
 
