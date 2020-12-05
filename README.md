@@ -8,7 +8,9 @@ To install Requirements, use
 
 The model is written and tested on cuda enviroment
 
-Also, you have to download and place `ckpt.pt` into `./cat_id/flask_deep/`
+Also, you have to download `ckpt.pt` from below link and place into `./cat_id/flask_deep/`
+https://drive.google.com/file/d/1pcQRjzuhWySDOAnumXhN16y5s9jBK1Ni/view?usp=sharing
+
 
 Experiment
 =====
@@ -47,6 +49,27 @@ File Structure
 
 `Classifier.py`
 ----
-Descrption....
+The main Function that preprocess and train model
 
+`resave.py`
+---
+Utility script to reduce the size of the checkpoint file
 
+`test_model.py`
+----
+Plot train/valid accuracy/loss and show some examples
+
+`./cat_id`
+----
+Directory that include service frontend/backend
+ - `__init__.py`
+
+    Script that execute server
+
+`./data_collect`
+----
+Directory that include crawler & dataset
+ 
+ - `rename.py`
+    
+    Utility function to reorganize file structure

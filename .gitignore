@@ -3,3 +3,4 @@
 __pycache__
 *.pt
 cat_id/flask_deep/static/images/*
+*.out
