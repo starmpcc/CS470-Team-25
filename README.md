@@ -32,6 +32,8 @@ File Structure
 |-- data_collect
 |   |-- crawling.py
 |   |-- rename.py
+|   |-- used.txt
+|   |-- url.txt
 |-- cat_id
 |   |-- server.py
 |   |-- flask_deep
@@ -49,6 +51,18 @@ File Structure
 |-- cropped_cat
 |-- cropped_cat_2
 ```
+
+'crawling.py'
+----
+Python file for crawling cat photos from Instagram accounts in url.txt
+
+'url.txt'
+----
+crawling.py gets photos from accounts in this texts
+
+'used.txt'
+---
+contains all accounts used for data collectin
 
 `Classifier.py`
 ----
@@ -77,7 +91,13 @@ Directory that include crawler & dataset
  - `rename.py`
     Utility function to reorganize file structure
     
+'upload.html'
+---
+html page for uploading page of 'cat_id'
 
+'result.html'
+---
+html page showing uploaded image and predicted images
 
 `./cropped_cat`
 ----
