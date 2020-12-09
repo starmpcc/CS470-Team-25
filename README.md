@@ -81,8 +81,8 @@ Directory that include crawler & dataset
 
 `./cropped_cat`
 ----
-Directory that crop the cat face using the pretrained model of [pycatfd](https://github.com/marando/pycatfd)
+Trials to crop the cat face using the pretrained model of [pycatfd](https://github.com/marando/pycatfd)
 
 `./cropped_cat2`
 ----
-Directory that crop the cat face using the pretrained model of [Haar Cascade Model in OpenCV](https://github.com/opencv/opencv/blob/ca9756f6a1ea25a232d83d768f833b4fa3ee4cf4/data/haarcascades/haarcascade_frontalcatface_extended.xml)
+Trials to crop the cat face using the pretrained model of [Haar Cascade Model in OpenCV](https://github.com/opencv/opencv/blob/ca9756f6a1ea25a232d83d768f833b4fa3ee4cf4/data/haarcascades/haarcascade_frontalcatface_extended.xml)
