@@ -22,7 +22,7 @@ Then you can access to the demo by move to the address in your browser,
 
 `127.0.0.1:5000`
 
-This is the result page you will see.
+This is the result page you will see after uploading a cat image.
 ![result.html](./result.JPG)
 
 File Structure
