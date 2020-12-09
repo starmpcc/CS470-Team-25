@@ -86,3 +86,7 @@ Trials to crop the cat face using the pretrained model of [pycatfd](https://gith
 `./cropped_cat2`
 ----
 Trials to crop the cat face using the pretrained model of [Haar Cascade Model in OpenCV](https://github.com/opencv/opencv/blob/ca9756f6a1ea25a232d83d768f833b4fa3ee4cf4/data/haarcascades/haarcascade_frontalcatface_extended.xml)
+
+`./cropped_cat3`
+----
+Trials to crop the cat face by handwork using [labelImg](https://github.com/tzutalin/labelImg). This folder is in the branch: crop-images.
