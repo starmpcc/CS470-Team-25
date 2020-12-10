@@ -84,20 +84,18 @@ Directory that include service frontend/backend
  
  - `./flask_deep/__init__.py`
     Script that execute server
+    
+ - `./flask_deep/templates/upload.html`
+    html page for uploading page of 'cat_id'
+    
+ - `./flask_deep/templates/result.html`
+    html page showing uploaded image and predicted images
 
 `./data_collect`
 ----
 Directory that include crawler & dataset
  - `rename.py`
     Utility function to reorganize file structure
-    
-'upload.html'
----
-html page for uploading page of 'cat_id'
-
-'result.html'
----
-html page showing uploaded image and predicted images
 
 `./cropped_cat`
 ----
